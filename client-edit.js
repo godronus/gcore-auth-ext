@@ -1,4 +1,5 @@
 window.handleSSOButtonClick = (clientId) => {
+  console.log("Farq: handleButtonClick -> clientId", clientId);
   const clientButtonWrapper = window.getButtonWrapper();
   const activeTabId = parseInt(clientButtonWrapper.dataset.activeTabId ?? 0);
   if (clientId !== "cancel") {
@@ -66,10 +67,10 @@ window.client_prompt = function () {
   prompt.appendChild(clientButtonWrapper);
 
   const footer = document.createElement("div");
-  footer.className = "sso-footer";
+  footer.className = "footer";
 
   const cancelButton = document.createElement("button");
-  cancelButton.className = "sso-cancel-button sso-button";
+  cancelButton.className = "cancel-button";
   cancelButton.textContent = "Cancel";
   cancelButton.addEventListener(
     "click",
@@ -79,21 +80,23 @@ window.client_prompt = function () {
   footer.appendChild(cancelButton);
   prompt.appendChild(footer);
 
+  // todo: temp code for quokka
+  // const promptWrapper = document.createElement("div");
+  // promptWrapper.className = "quokka-wrapper";
+  // promptWrapper.appendChild(prompt);
+  // document.body.appendChild(promptWrapper);
+
   document.body.appendChild(prompt);
 };
 
 window.getButtonWrapper = () =>
   document.getElementById("client-button-wrapper");
 
-window.createClientButton = (default_id, client, columns = "single") => {
+window.createClientButton = (default_id, client) => {
   const clientButtonWrapper = window.getButtonWrapper();
   if (!clientButtonWrapper) return;
   const clientButton = document.createElement("button");
-
-  clientButton.className = `sso-button sso-client-button-${columns}`;
-  if (default_id === client.id) {
-    clientButton.className += " sso-default-button";
-  }
+  clientButton.className = "client-button";
   clientButton.textContent = `${client.name} (${client.id})`;
   clientButton.addEventListener(
     "click",
@@ -105,19 +108,16 @@ window.createClientButton = (default_id, client, columns = "single") => {
 };
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(
+    "Farq: CLient-selector receiving ---- request.message",
+    request.message
+  );
   if (request.message === "extension_icon_clicked") {
     const clientButtonWrapper = window.getButtonWrapper();
     if (window.selectorIsOpen && clientButtonWrapper?.children.length === 0) {
       clientButtonWrapper.dataset.activeTabId = request.data.activeTabId;
-      const columns =
-        clientData.clients.length < 12
-          ? "single"
-          : clientData.clients.length < 20
-          ? "double"
-          : "triple";
-
       request.data.clients.forEach((client) => {
-        window.createClientButton(request.data.default, client, columns);
+        window.createClientButton(request.data.default, client);
       });
     }
   }

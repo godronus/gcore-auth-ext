@@ -24,7 +24,6 @@
     "webNavigation",
     "storage",
     "tabs",
-    "webRequest",
     "https://*.gplatform.local/*",
     "https://*.preprod.world/*",
     "https://*.admin.preprod.world/*",

@@ -33,37 +33,6 @@ const storageBox = () => {
     });
 
   return {
-    getData: (password, activeTabId) =>
-      new Promise(async (resolve, reject) => {
-        console.log("Farq: storageBox -> password", password);
-        if (!_decData || !_decData.user || !_decData.clients || !_key) {
-          if (!_key && !password) {
-            _activeTabId = activeTabId;
-            await browser.tabs.insertCSS({ file: "password.css" });
-            browser.tabs.executeScript({ file: "password.js" }, (result) => {
-              console.log("Farq: storageBox -> result", result);
-              reject("Need to wait for password input");
-            });
-          } else if (!_key && password) {
-            console.log("Farq: storageBox -> _key", _key);
-            console.log("Farq: storageBox -> password", password);
-            const storedData = await getStorageSettings();
-            _key = password;
-            try {
-              _decData = obfs(storedData, _key);
-            } catch (error) {
-              _decData = {};
-            }
-            return resolve({
-              data: { ..._decData },
-              activeTabId: _activeTabId,
-            });
-          }
-        } else {
-          return resolve({ data: { ..._decData }, activeTabId: _activeTabId });
-        }
-      }),
-    resetKey: () => (_key = null),
     getClientData: (activeTabId) =>
       new Promise(async (resolve, reject) => {
         console.log(
@@ -134,13 +103,37 @@ const storageBox = () => {
 
 const store = storageBox();
 
+const urlRegexPatterns = (urlMatches) => {
+  return urlMatches.map((pattern) => {
+    // Escape special characters and replace * with .*
+    const regexPattern = pattern
+      .replace(/\./g, "\\.")
+      .replace(/\//g, "\\/")
+      .replace(/\*/g, ".*");
+    // Anchor the pattern
+    return `^${regexPattern}$`;
+  });
+};
+
+const regexSelectClientPatterns = urlRegexPatterns([
+  "https://auth*",
+  "http://auth*",
+]);
+
 browser.browserAction.onClicked.addListener(function (tab) {
-  console.log("Farq: background -> onClick -> tab", tab);
   browser.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const activeTabId = tabs?.[0]?.id;
+    const url = tabs?.[0]?.url;
     try {
       // ?fix TEMPORARY HACK TO SET CLIENT DATA - DEVELOPMENT ONLY
       await store.setClientData();
+
+      if (
+        !regexSelectClientPatterns.some((regex) => new RegExp(regex).test(url))
+      ) {
+        // Not a page where we need to select a client
+        return;
+      }
       const clientData = await store.getClientData(activeTabId);
       await browser.tabs.insertCSS({ file: "client-selector.css" });
       browser.tabs.executeScript({ file: "client-selector.js" }, (result) => {
@@ -162,7 +155,7 @@ browser.browserAction.onClicked.addListener(function (tab) {
   });
 });
 
-const pageTrackingUrlMatches = [
+const regexPageTrackingPatterns = urlRegexPatterns([
   "https://*.gplatform.local/*",
   "https://*.preprod.world/*",
   "https://*.admin.preprod.world/*",
@@ -172,30 +165,17 @@ const pageTrackingUrlMatches = [
   "http://*.gplatform.local/*",
   "http://localhost/*",
   "http://0.0.0.0/*",
-];
-
-const regexPagePatterns = pageTrackingUrlMatches.map((pattern) => {
-  // Escape special characters and replace * with .*
-  const regexPattern = pattern
-    .replace(/\./g, "\\.")
-    .replace(/\//g, "\\/")
-    .replace(/\*/g, ".*");
-  // Anchor the pattern
-  return `^${regexPattern}$`;
-});
-
+]);
 // Listen for when a page has finished loading
 browser.webNavigation.onCompleted.addListener(async function (details) {
-  console.log("Farq: webNavigation -> details", details);
   // Ensure it's the main frame
   if (details.frameId === 0) {
     const { url, tabId: activeTabId } = details;
-    console.log("Page loaded:", url, url.includes("://auth."));
     if (!url.includes("://auth")) {
-      if (regexPagePatterns.some((regex) => new RegExp(regex).test(url))) {
-        console.log("Farq: SAVE SAVE SAVE");
+      if (
+        regexPageTrackingPatterns.some((regex) => new RegExp(regex).test(url))
+      ) {
         const pageRedirectUrl = await store.getPageRedirect(activeTabId, url);
-        console.log("Farq: pageRedirectUrl", pageRedirectUrl);
         if (pageRedirectUrl) {
           // Redirect to the saved page as this comes from login completion
           await store.setPageRedirect(activeTabId, null);
@@ -203,19 +183,24 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
         }
         // Native reload.. save history
         return await store.setPageHistory(activeTabId, url);
-      } else {
-        console.log("Farq: IGNORE IGNORE IGNORE");
       }
     }
-    if (url.includes("/#/acs?session_id=")) {
-      // This is the client selection page loading after sso login
-      const clientId = await store.getClientSelection(activeTabId);
-      setTimeout(() => {
-        browser.tabs.sendMessage(activeTabId, {
-          message: "client_selection_form_loaded",
-          payload: { clientId, activeTabId },
-        });
-      }, 1000);
+    if (url.includes("acs?session_id=")) {
+      // This implies the login sequence has completed
+      browser.tabs.sendMessage(activeTabId, {
+        message: "login_sequence_complete_set_redirect_url",
+        payload: { activeTabId },
+      });
+      if (url.includes("/#/acs?session_id=")) {
+        // This is the client selection page loading after sso login
+        const clientId = await store.getClientSelection(activeTabId);
+        setTimeout(() => {
+          browser.tabs.sendMessage(activeTabId, {
+            message: "client_selection_form_loaded",
+            payload: { clientId, activeTabId },
+          });
+        }, 1000);
+      }
     }
   }
 });
@@ -246,7 +231,7 @@ browser.runtime.onMessage.addListener(async function (
         const { activeTabId } = request.payload;
         console.log("Farq: activeTabId", activeTabId);
         const url = await store.getPageHistory(activeTabId);
-        console.log("Farq: redirect -> url", url);
+        console.log("Farq: redirect -> SAVE -> url (from pageHistory)", url);
         await store.setPageRedirect(activeTabId, url);
       }
     }
@@ -259,13 +244,13 @@ browser.runtime.onMessage.addListener(async function (
 /* Context Menus */
 
 browser.contextMenus.create({
-  id: "gcore-auth-data",
+  id: "gcore-auth-edit-clients",
   title: "Edit Clients",
   contexts: ["browser_action"],
 });
 
 browser.contextMenus.onClicked.addListener(function (info, tab) {
-  if (info.menuItemId === "gcore-auth-data") {
+  if (info.menuItemId === "gcore-auth-edit-clients") {
     browser.tabs.create(
       {
         url: browser.extension.getURL("popup.html"),
@@ -290,22 +275,3 @@ browser.contextMenus.onClicked.addListener(function (info, tab) {
     );
   }
 });
-
-/* Web Requests */
-
-const networkFilters = {
-  urls: [
-    "*://*.staging.rawnet.one/configuration/features",
-    "*://*.rawnet.one/configuration/features",
-  ],
-};
-
-browser.webRequest.onBeforeRequest.addListener((details) => {
-  console.log("Farq: details", details);
-  const { url } = details;
-  const clientName = url.slice(12, url.indexOf("."));
-  browser.storage.local.set({ "api-client": clientName });
-  browser.storage.local.set({
-    "api-context": url.includes(".staging") ? "s" : "p",
-  });
-}, networkFilters);
