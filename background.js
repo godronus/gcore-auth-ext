@@ -107,11 +107,25 @@ const storageBox = () => {
     },
     setPageHistory: async (activeTabId, url) => {
       const pageHistory = await getStorageData("page-history");
-      console.log("Farq: selectedClients", selectedClients);
+      console.log("Farq: pageHistory", pageHistory);
       pageHistory[activeTabId] = url;
       return await setStorageData(
         "page-history",
         pageHistory,
+        (inMemoryOnly = true)
+      );
+    },
+    getPageRedirect: async (activeTabId) => {
+      const pageRedirect = await getStorageData("page-redirect");
+      return pageRedirect[activeTabId];
+    },
+    setPageRedirect: async (activeTabId, url) => {
+      const pageRedirect = await getStorageData("page-redirect");
+      console.log("Farq: pageRedirect", pageRedirect);
+      pageRedirect[activeTabId] = url;
+      return await setStorageData(
+        "page-redirect",
+        pageRedirect,
         (inMemoryOnly = true)
       );
     },
@@ -148,15 +162,50 @@ browser.browserAction.onClicked.addListener(function (tab) {
   });
 });
 
+const pageTrackingUrlMatches = [
+  "https://*.gplatform.local/*",
+  "https://*.preprod.world/*",
+  "https://*.admin.preprod.world/*",
+  "https://*.ed-prod.p.gc.onl/*",
+  "https://*.gcore.com/*",
+  "https://*.gcore.top/*",
+  "http://*.gplatform.local/*",
+  "http://localhost/*",
+  "http://0.0.0.0/*",
+];
+
+const regexPagePatterns = pageTrackingUrlMatches.map((pattern) => {
+  // Escape special characters and replace * with .*
+  const regexPattern = pattern
+    .replace(/\./g, "\\.")
+    .replace(/\//g, "\\/")
+    .replace(/\*/g, ".*");
+  // Anchor the pattern
+  return `^${regexPattern}$`;
+});
+
 // Listen for when a page has finished loading
 browser.webNavigation.onCompleted.addListener(async function (details) {
   console.log("Farq: webNavigation -> details", details);
   // Ensure it's the main frame
   if (details.frameId === 0) {
     const { url, tabId: activeTabId } = details;
-    console.log("Page loaded:", details.url);
-    if (!url.includes("://auth.")) {
-      return await store.setPageHistory(activeTabId, url);
+    console.log("Page loaded:", url, url.includes("://auth."));
+    if (!url.includes("://auth")) {
+      if (regexPagePatterns.some((regex) => new RegExp(regex).test(url))) {
+        console.log("Farq: SAVE SAVE SAVE");
+        const pageRedirectUrl = await store.getPageRedirect(activeTabId, url);
+        console.log("Farq: pageRedirectUrl", pageRedirectUrl);
+        if (pageRedirectUrl) {
+          // Redirect to the saved page as this comes from login completion
+          await store.setPageRedirect(activeTabId, null);
+          return browser.tabs.update(activeTabId, { url: pageRedirectUrl });
+        }
+        // Native reload.. save history
+        return await store.setPageHistory(activeTabId, url);
+      } else {
+        console.log("Farq: IGNORE IGNORE IGNORE");
+      }
     }
     if (url.includes("/#/acs?session_id=")) {
       // This is the client selection page loading after sso login
@@ -197,10 +246,8 @@ browser.runtime.onMessage.addListener(async function (
         const { activeTabId } = request.payload;
         console.log("Farq: activeTabId", activeTabId);
         const url = await store.getPageHistory(activeTabId);
-        console.log("Farq: url", url);
-        setTimeout(() => {
-          console.log("Farq: redirecting to:", url);
-        }, 500);
+        console.log("Farq: redirect -> url", url);
+        await store.setPageRedirect(activeTabId, url);
       }
     }
   } catch (error) {
