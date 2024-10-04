@@ -1,0 +1,20 @@
+body {
+  background-color: beige;
+  text-align: center;
+}
+
+.passkeywrapper {
+  min-width: 1000px;
+  min-height: 60px;
+}
+
+#passwords {
+  min-width: 1000px;
+  min-height: 500px;
+}
+
+.button {
+  margin: 20px 10px;
+  width: 80px;
+  height: 40px;
+}

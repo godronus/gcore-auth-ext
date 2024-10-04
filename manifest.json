@@ -1,0 +1,51 @@
+{
+  "manifest_version": 2,
+  "name": "Gcore auth extension",
+  "version": "1.0",
+  "description": "This extension will help you to authenticate with Gcore",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.gplatform.local/*",
+        "https://*.preprod.world/*",
+        "https://*.admin.preprod.world/*",
+        "https://*.ed-prod.p.gc.onl/*",
+        "https://*.gcore.com/*",
+        "https://*.gcore.top/*",
+        "http://*.gplatform.local/*",
+        "http://localhost/*",
+        "http://0.0.0.0/*"
+      ],
+      "js": ["content.js", "client-selector.js"]
+    }
+  ],
+  "permissions": [
+    "contextMenus",
+    "webNavigation",
+    "storage",
+    "tabs",
+    "webRequest",
+    "https://*.gplatform.local/*",
+    "https://*.preprod.world/*",
+    "https://*.admin.preprod.world/*",
+    "https://*.ed-prod.p.gc.onl/*",
+    "https://*.gcore.com/*",
+    "https://*.gcore.top/*",
+    "http://*.gplatform.local/*",
+    "http://localhost/*",
+    "http://0.0.0.0/*"
+  ],
+  "browser_action": {
+    "default_icon": {
+      "16": "images/icon16.png",
+      "24": "images/icon24.png",
+      "64": "images/icon24.png",
+      "128": "images/icon128.png"
+    },
+    "default_title": "Gcore Auth"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  }
+}
