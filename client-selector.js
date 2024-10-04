@@ -112,7 +112,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     "Farq: CLient-selector receiving ---- request.message",
     request.message
   );
-  if (request.message === "send_client_data") {
+  if (request.message === "extension_icon_clicked") {
     const clientButtonWrapper = window.getButtonWrapper();
     if (window.selectorIsOpen && clientButtonWrapper?.children.length === 0) {
       clientButtonWrapper.dataset.activeTabId = request.data.activeTabId;
