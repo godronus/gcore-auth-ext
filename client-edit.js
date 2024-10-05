@@ -1,126 +1,227 @@
-window.handleSSOButtonClick = (clientId) => {
-  console.log("Farq: handleButtonClick -> clientId", clientId);
-  const clientButtonWrapper = window.getButtonWrapper();
-  const activeTabId = parseInt(clientButtonWrapper.dataset.activeTabId ?? 0);
-  if (clientId !== "cancel") {
-    browser.runtime.sendMessage({
-      message: "client_id_picked",
-      payload: { activeTabId, clientId },
-    });
-  }
-  window.closeSelectorPanel();
-};
-
-window.closeSelectorPanel = () => {
-  const clientPromptWrapper = document.getElementById("client-prompt-wrapper");
-  if (clientPromptWrapper) {
-    clientPromptWrapper.remove();
-    delete window.selectorIsOpen;
-  }
-};
-
-window.client_prompt = function () {
-  if (window.selectorIsOpen) {
+window.handleCListButtonClick = (activeTabId, action, clientId) => {
+  if (action === "cancel") {
+    window.closeClientEditPanel();
     return;
   }
-  window.selectorIsOpen = true;
+  if (action === "save") {
+    browser.runtime.sendMessage({
+      message: "client_info_save",
+      payload: {
+        activeTabId,
+        clientData: { defaultId: window.defaultId, clients: window.clients },
+      },
+    });
+    window.closeClientEditPanel();
+    return;
+  }
+  if (action === "remove") {
+    window.clients = window.clients.filter((client) => client.id !== clientId);
+  }
+  if (action === "default") {
+    window.defaultId = clientId;
+  }
+  window.renderClientListItems(activeTabId);
+};
 
+window.closeClientEditPanel = () => {
+  window.getClientEditWrapper()?.remove();
+  browser.runtime.sendMessage({
+    message: "client_editor_closed",
+    payload: { activeTabId },
+  });
+};
+
+window.getClientEditWrapper = () =>
+  document.getElementById("clist-client-edit-wrapper");
+
+window.getClientListWrapper = () =>
+  document.getElementById("clist-list-wrapper");
+
+window.getClientListInner = () => document.getElementById("clist-list-inner");
+
+window.clearClientListInner = () => {
+  window.getClientListInner()?.remove();
+  const clientListInner = document.createElement("div");
+  clientListInner.id = "clist-list-inner";
+  window.getClientListWrapper()?.appendChild(clientListInner);
+};
+
+window.createClientListEditor = function (activeTabId) {
   // create page layout
-  const prompt = document.createElement("div");
-  prompt.id = "client-prompt-wrapper";
+  const clientEditor = document.createElement("div");
+  clientEditor.id = "clist-client-edit-wrapper";
 
   const header = document.createElement("div");
-  header.className = "sso-header";
-  prompt.appendChild(header);
+  header.className = "clist-header";
+  clientEditor.appendChild(header);
 
   const headingLabel = document.createElement("h2");
-  headingLabel.textContent = "Select Client Id:";
+  headingLabel.textContent = "Edit SSO Login Options:";
   header.appendChild(headingLabel);
 
   const dismissButton = document.createElement("button");
-  dismissButton.className = "dismiss-button";
+  dismissButton.className = "clist-dismiss-button clist-button";
   dismissButton.textContent = "X";
   dismissButton.addEventListener(
     "click",
-    () => window.handleSSOButtonClick("cancel"),
+    () => window.handleCListButtonClick(activeTabId, "cancel"),
     false
   );
   header.appendChild(dismissButton);
 
-  const ssoButtonWrapper = document.createElement("div");
-  ssoButtonWrapper.className = "sso-button-wrapper";
-  prompt.appendChild(ssoButtonWrapper);
+  const clientList = document.createElement("div");
+  clientList.classname = "clist-list";
 
-  const ssoButton = document.createElement("button");
-  ssoButton.className = "sso-button";
-  ssoButton.textContent = `SSO`;
-  ssoButton.addEventListener(
-    "click",
-    () => window.handleSSOButtonClick(0),
-    false
-  );
-  ssoButtonWrapper.appendChild(ssoButton);
+  const headingItem = document.createElement("div");
+  headingItem.className = "clist-item clist-heading-row";
+  headingItem.dataset.type = "heading";
 
-  let clientButtonWrapper = window.getButtonWrapper();
-  if (!clientButtonWrapper) clientButtonWrapper = document.createElement("div");
-  clientButtonWrapper.id = "client-button-wrapper";
-  prompt.appendChild(clientButtonWrapper);
+  const clientTitle = document.createElement("span");
+  clientTitle.className = "clist-item-heading clist-item-title";
+  clientTitle.textContent = `Client`;
+  headingItem.appendChild(clientTitle);
+
+  const defaultTitle = document.createElement("span");
+  defaultTitle.className = "clist-item-heading";
+  defaultTitle.textContent = `Default (dbl-clk)`;
+  headingItem.appendChild(defaultTitle);
+
+  const clientAction = document.createElement("span");
+  clientAction.className = "clist-item-heading";
+  clientAction.textContent = "";
+  headingItem.appendChild(clientAction);
+
+  clientList.appendChild(headingItem);
+  clientEditor.appendChild(clientList);
+
+  const clientListWrapper = document.createElement("div");
+  clientListWrapper.id = "clist-list-wrapper";
+  clientEditor.appendChild(clientListWrapper);
 
   const footer = document.createElement("div");
-  footer.className = "footer";
+  footer.className = "clist-footer";
 
   const cancelButton = document.createElement("button");
-  cancelButton.className = "cancel-button";
+  cancelButton.className = "clist-cancel-button clist-button";
   cancelButton.textContent = "Cancel";
   cancelButton.addEventListener(
     "click",
-    () => window.handleSSOButtonClick("cancel"),
+    () => window.handleCListButtonClick(activeTabId, "cancel"),
     false
   );
   footer.appendChild(cancelButton);
-  prompt.appendChild(footer);
 
-  // todo: temp code for quokka
-  // const promptWrapper = document.createElement("div");
-  // promptWrapper.className = "quokka-wrapper";
-  // promptWrapper.appendChild(prompt);
-  // document.body.appendChild(promptWrapper);
-
-  document.body.appendChild(prompt);
-};
-
-window.getButtonWrapper = () =>
-  document.getElementById("client-button-wrapper");
-
-window.createClientButton = (default_id, client) => {
-  const clientButtonWrapper = window.getButtonWrapper();
-  if (!clientButtonWrapper) return;
-  const clientButton = document.createElement("button");
-  clientButton.className = "client-button";
-  clientButton.textContent = `${client.name} (${client.id})`;
-  clientButton.addEventListener(
+  const saveButton = document.createElement("button");
+  saveButton.className = "clist-save-button clist-button";
+  saveButton.textContent = "Save";
+  saveButton.addEventListener(
     "click",
-    () => window.handleSSOButtonClick(client.id),
+    () => window.handleCListButtonClick(activeTabId, "save"),
     false
   );
-  clientButtonWrapper.appendChild(clientButton);
-  console.log("innerHTML", clientButtonWrapper.innerHTML);
+  footer.appendChild(saveButton);
+  clientEditor.appendChild(footer);
+  document.body.appendChild(clientEditor);
+};
+
+window.createClientListItem = (activeTabId, defaultId, client) => {
+  const clientListInner = window.getClientListInner();
+  if (!clientListInner) return;
+
+  const listItem = document.createElement("div");
+  listItem.className = "clist-item";
+
+  const itemTitle = document.createElement("span");
+  itemTitle.className = "clist-item-title";
+  itemTitle.textContent = `${client.name} (ID ${client.id})`;
+  listItem.appendChild(itemTitle);
+
+  const defaultButton = document.createElement("button");
+  defaultButton.className = `clist-set-default-button ${
+    defaultId === client.id ? "clist-selected" : ""
+  }`;
+  defaultButton.textContent = defaultId === client.id ? "•" : "";
+  defaultButton.addEventListener(
+    "click",
+    () => window.handleCListButtonClick(activeTabId, "default", client.id),
+    false
+  );
+  listItem.appendChild(defaultButton);
+
+  const removeButton = document.createElement("button");
+  removeButton.className = "clist-remove-button clist-button";
+  removeButton.textContent = "X";
+  removeButton.addEventListener(
+    "click",
+    () => window.handleCListButtonClick(activeTabId, "remove", client.id),
+    false
+  );
+  listItem.appendChild(removeButton);
+
+  clientListInner.appendChild(listItem);
+};
+
+window.clients = [];
+window.defaultId = 0;
+
+window.renderClientListItems = (activeTabId) => {
+  window.clearClientListInner();
+  window.clients.forEach((client) => {
+    window.createClientListItem(activeTabId, window.defaultId, client);
+  });
+};
+
+window.collectLoginClients = async (activeTabId) => {
+  const newClients = [];
+  try {
+    const ulElement = document.querySelector(".account-list");
+    if (ulElement) {
+      const liElements = ulElement.querySelectorAll("li");
+      for (let li of liElements) {
+        const spanId =
+          li.querySelector("span.account-id")?.textContent?.trim() ?? "";
+        const spanName =
+          li.querySelector("span.account-name")?.textContent?.trim() ?? "";
+        if (spanId && spanName) {
+          newClients.push({
+            id: parseInt(spanId.replace(/\D/g, "")),
+            name: spanName,
+          });
+        }
+      }
+    }
+    window.mergeDedupedClients(activeTabId, newClients);
+  } catch (error) {
+    console.error("loginClientSelection -> error", error);
+    // Do nothing could just be missing first step of sso login
+  }
+};
+
+window.mergeDedupedClients = (activeTabId, clients = []) => {
+  const uniqueClients = clients.filter((client) => {
+    const found = window.clients.find((c) => c.id === client.id);
+    return !found;
+  });
+  window.clients = [...window.clients, ...uniqueClients];
+  window.renderClientListItems(activeTabId);
 };
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log(
-    "Farq: CLient-selector receiving ---- request.message",
-    request.message
-  );
-  if (request.message === "extension_icon_clicked") {
-    const clientButtonWrapper = window.getButtonWrapper();
-    if (window.selectorIsOpen && clientButtonWrapper?.children.length === 0) {
-      clientButtonWrapper.dataset.activeTabId = request.data.activeTabId;
-      request.data.clients.forEach((client) => {
-        window.createClientButton(request.data.default, client);
-      });
+  switch (request.message) {
+    case "edit_clients_clicked": {
+      const { clients, defaultId, activeTabId } = request.data;
+      if (!window.getClientEditWrapper()) {
+        createClientListEditor(activeTabId);
+        window.defaultId = defaultId;
+        window.mergeDedupedClients(activeTabId, clients);
+      } else {
+        window.collectLoginClients(activeTabId);
+      }
+      break;
+    }
+    case "extension_icon_clicked": {
+      window.closeClientEditPanel();
+      break;
     }
   }
 });
-
-client_prompt();

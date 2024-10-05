@@ -14,7 +14,6 @@ const waitForElement = (selector, timeout = 2000) => {
         setTimeout(check, interval);
       }
     };
-
     check();
   });
 };
@@ -76,22 +75,14 @@ const sendLoginSequenceComplete = (activeTabId) => {
 };
 
 const loginClientSelection = async (activeTabId, clientId) => {
-  console.log(
-    "Farq: loginClientSelection -> clientId",
-    clientId,
-    "activeTabId",
-    activeTabId
-  );
   try {
     const ulElement = await waitForElement(".account-list", 5000);
-    console.log("Farq: clientLogin -> ulElement", ulElement);
     if (ulElement) {
       const liElements = ulElement.querySelectorAll("li");
       for (let li of liElements) {
         const span = li.querySelector("span.account-id");
         const link = li.querySelector("a");
         if (span && span.textContent.trim().includes(clientId)) {
-          console.log("Farq: loginClientSelection -> li", li);
           sendLoginSequenceComplete(activeTabId);
           return link.click();
         }
@@ -108,8 +99,6 @@ browser.runtime.onMessage.addListener(async function (
   sender,
   sendResponse
 ) {
-  console.log("Farq: content-script.js: onMessage:", request.message);
-  console.log("Farq: content-script.js: request", request);
   try {
     switch (request.message) {
       case "start_login_sequence": {

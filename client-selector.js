@@ -1,5 +1,5 @@
 window.handleSSOButtonClick = (clientId) => {
-  const clientButtonWrapper = window.getButtonWrapper();
+  const clientButtonWrapper = window.getSsoButtonWrapper();
   const activeTabId = parseInt(clientButtonWrapper.dataset.activeTabId ?? 0);
   if (clientId !== "cancel") {
     browser.runtime.sendMessage({
@@ -11,33 +11,28 @@ window.handleSSOButtonClick = (clientId) => {
 };
 
 window.closeSelectorPanel = () => {
-  const clientPromptWrapper = document.getElementById("client-prompt-wrapper");
-  if (clientPromptWrapper) {
-    clientPromptWrapper.remove();
-    delete window.selectorIsOpen;
-  }
+  window.getSsoPromptWrapper()?.remove();
+  browser.runtime.sendMessage({
+    message: "client_selector_closed",
+    payload: { activeTabId },
+  });
 };
 
-window.client_prompt = function () {
-  if (window.selectorIsOpen) {
-    return;
-  }
-  window.selectorIsOpen = true;
-
+window.createClientPrompt = function () {
   // create page layout
   const prompt = document.createElement("div");
-  prompt.id = "client-prompt-wrapper";
+  prompt.id = "sso-client-prompt-wrapper";
 
   const header = document.createElement("div");
   header.className = "sso-header";
   prompt.appendChild(header);
 
   const headingLabel = document.createElement("h2");
-  headingLabel.textContent = "Select Client Id:";
+  headingLabel.textContent = "Select Client ID:";
   header.appendChild(headingLabel);
 
   const dismissButton = document.createElement("button");
-  dismissButton.className = "dismiss-button";
+  dismissButton.className = "sso-dismiss-button sso-button";
   dismissButton.textContent = "X";
   dismissButton.addEventListener(
     "click",
@@ -60,9 +55,9 @@ window.client_prompt = function () {
   );
   ssoButtonWrapper.appendChild(ssoButton);
 
-  let clientButtonWrapper = window.getButtonWrapper();
+  let clientButtonWrapper = window.getSsoButtonWrapper();
   if (!clientButtonWrapper) clientButtonWrapper = document.createElement("div");
-  clientButtonWrapper.id = "client-button-wrapper";
+  clientButtonWrapper.id = "sso-client-button-wrapper";
   prompt.appendChild(clientButtonWrapper);
 
   const footer = document.createElement("div");
@@ -82,16 +77,18 @@ window.client_prompt = function () {
   document.body.appendChild(prompt);
 };
 
-window.getButtonWrapper = () =>
-  document.getElementById("client-button-wrapper");
+window.getSsoButtonWrapper = () =>
+  document.getElementById("sso-client-button-wrapper");
 
-window.createClientButton = (default_id, client, columns = "single") => {
-  const clientButtonWrapper = window.getButtonWrapper();
+window.getSsoPromptWrapper = () =>
+  document.getElementById("sso-client-prompt-wrapper");
+
+window.createClientButton = (defaultId, client, columns = "single") => {
+  const clientButtonWrapper = window.getSsoButtonWrapper();
   if (!clientButtonWrapper) return;
   const clientButton = document.createElement("button");
-
   clientButton.className = `sso-button sso-client-button-${columns}`;
-  if (default_id === client.id) {
+  if (defaultId === client.id) {
     clientButton.className += " sso-default-button";
   }
   clientButton.textContent = `${client.name} (${client.id})`;
@@ -101,26 +98,40 @@ window.createClientButton = (default_id, client, columns = "single") => {
     false
   );
   clientButtonWrapper.appendChild(clientButton);
-  console.log("innerHTML", clientButtonWrapper.innerHTML);
 };
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.message === "extension_icon_clicked") {
-    const clientButtonWrapper = window.getButtonWrapper();
-    if (window.selectorIsOpen && clientButtonWrapper?.children.length === 0) {
-      clientButtonWrapper.dataset.activeTabId = request.data.activeTabId;
-      const columns =
-        clientData.clients.length < 12
-          ? "single"
-          : clientData.clients.length < 20
-          ? "double"
-          : "triple";
+  switch (request.message) {
+    case "extension_icon_clicked": {
+      const { activeTabId, clients, defaultId } = request.data;
+      if (!window.getSsoPromptWrapper()) {
+        createClientPrompt();
+        const clientButtonWrapper = window.getSsoButtonWrapper();
+        if (clientButtonWrapper?.children.length === 0) {
+          clientButtonWrapper.dataset.activeTabId = activeTabId;
+          const columns =
+            clients.length < 12
+              ? "single"
+              : clients.length < 20
+              ? "double"
+              : "triple";
 
-      request.data.clients.forEach((client) => {
-        window.createClientButton(request.data.default, client, columns);
-      });
+          clients.forEach((client) => {
+            window.createClientButton(defaultId, client, columns);
+          });
+        }
+      } else {
+        browser.runtime.sendMessage({
+          message: "client_id_picked",
+          payload: { activeTabId, clientId: defaultId },
+        });
+        window.closeSelectorPanel();
+      }
+      break;
+    }
+    case "edit_clients_clicked": {
+      window.closeSelectorPanel();
+      break;
     }
   }
 });
-
-client_prompt();

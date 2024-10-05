@@ -16,7 +16,7 @@
         "http://localhost/*",
         "http://0.0.0.0/*"
       ],
-      "js": ["content.js", "client-selector.js"]
+      "js": ["content.js", "client-selector.js", "client-edit.js"]
     }
   ],
   "permissions": [

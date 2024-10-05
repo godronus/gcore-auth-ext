@@ -8,12 +8,6 @@ const storageBox = () => {
         return resolve(storageData[storageKey]);
       }
       browser.storage.local.get([storageKey], function (storedData) {
-        console.log(
-          "Farq: storageBox -> get storedData",
-          storageKey,
-          "data:",
-          storedData
-        );
         resolve(storedData);
       });
     });
@@ -26,7 +20,6 @@ const storageBox = () => {
         return resolve(dataToStore);
       }
       browser.storage.local.set({ [storageKey]: dataToStore }, function (here) {
-        console.log("Farq: storageBox -> setReturn", here);
         storageData[storageKey] = dataToStore;
         resolve(dataToStore);
       });
@@ -35,25 +28,13 @@ const storageBox = () => {
   return {
     getClientData: (activeTabId) =>
       new Promise(async (resolve, reject) => {
-        console.log(
-          "Farq: storageBox -> getClients -> activeTabId",
-          activeTabId
-        );
         const clientData = await getStorageData("client");
-        console.log("Farq: clientData", clientData);
         return resolve({
           activeTabId,
           ...clientData,
         });
       }),
-    setClientData: (activeTabId) => {
-      const clientData = {
-        default: 4732724,
-        clients: [
-          { name: "dave", id: 5724298 },
-          { name: "gordon", id: 4732724 },
-        ],
-      };
+    setClientData: (activeTabId, clientData) => {
       return setStorageData("client", clientData);
     },
     getClientSelection: async (activeTabId) => {
@@ -62,7 +43,6 @@ const storageBox = () => {
     },
     setClientSelection: async (activeTabId, clientId) => {
       const selectedClients = await getStorageData("selected-client");
-      console.log("Farq: selectedClients", selectedClients);
       selectedClients[activeTabId] = clientId;
       return await setStorageData(
         "selected-client",
@@ -76,7 +56,6 @@ const storageBox = () => {
     },
     setPageHistory: async (activeTabId, url) => {
       const pageHistory = await getStorageData("page-history");
-      console.log("Farq: pageHistory", pageHistory);
       pageHistory[activeTabId] = url;
       return await setStorageData(
         "page-history",
@@ -90,7 +69,6 @@ const storageBox = () => {
     },
     setPageRedirect: async (activeTabId, url) => {
       const pageRedirect = await getStorageData("page-redirect");
-      console.log("Farq: pageRedirect", pageRedirect);
       pageRedirect[activeTabId] = url;
       return await setStorageData(
         "page-redirect",
@@ -120,34 +98,21 @@ const regexSelectClientPatterns = urlRegexPatterns([
   "http://auth*",
 ]);
 
+const isAuthScreen = (url) => {
+  return regexSelectClientPatterns.some((regex) => new RegExp(regex).test(url));
+};
+
 browser.browserAction.onClicked.addListener(function (tab) {
   browser.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const activeTabId = tabs?.[0]?.id;
     const url = tabs?.[0]?.url;
+    if (!isAuthScreen(url)) return; // Not a page where we can select a client
     try {
-      // ?fix TEMPORARY HACK TO SET CLIENT DATA - DEVELOPMENT ONLY
-      await store.setClientData();
-
-      if (
-        !regexSelectClientPatterns.some((regex) => new RegExp(regex).test(url))
-      ) {
-        // Not a page where we need to select a client
-        return;
-      }
+      browser.tabs.insertCSS({ file: "client-selector.css" });
       const clientData = await store.getClientData(activeTabId);
-      await browser.tabs.insertCSS({ file: "client-selector.css" });
-      browser.tabs.executeScript({ file: "client-selector.js" }, (result) => {
-        if (browser.runtime.lastError) {
-          console.error(browser.runtime.lastError);
-          return;
-        }
-        // Send the clientData to the content script
-        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          browser.tabs.sendMessage(activeTabId, {
-            message: "extension_icon_clicked",
-            data: clientData,
-          });
-        });
+      browser.tabs.sendMessage(activeTabId, {
+        message: "extension_icon_clicked",
+        data: clientData,
       });
     } catch (error) {
       /* Do nothing.. cannot log from background script at present. */
@@ -210,12 +175,6 @@ browser.runtime.onMessage.addListener(async function (
   sender,
   sendResponse
 ) {
-  console.log(
-    "Farq: background -> onMessage:",
-    request.message,
-    "payload:",
-    request.payload
-  );
   try {
     switch (request.message) {
       case "client_id_picked": {
@@ -229,10 +188,21 @@ browser.runtime.onMessage.addListener(async function (
       }
       case "login_sequence_complete": {
         const { activeTabId } = request.payload;
-        console.log("Farq: activeTabId", activeTabId);
         const url = await store.getPageHistory(activeTabId);
-        console.log("Farq: redirect -> SAVE -> url (from pageHistory)", url);
         await store.setPageRedirect(activeTabId, url);
+      }
+      case "client_selector_closed": {
+        browser.tabs.removeCSS({ file: "client-selector.css" });
+        break;
+      }
+      case "client_editor_closed": {
+        browser.tabs.removeCSS({ file: "client-edit.css" });
+        break;
+      }
+      case "client_info_save": {
+        const { activeTabId, clientData } = request.payload;
+        await store.setClientData(activeTabId, clientData);
+        break;
       }
     }
   } catch (error) {
@@ -249,29 +219,19 @@ browser.contextMenus.create({
   contexts: ["browser_action"],
 });
 
-browser.contextMenus.onClicked.addListener(function (info, tab) {
+browser.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId === "gcore-auth-edit-clients") {
-    browser.tabs.create(
-      {
-        url: browser.extension.getURL("popup.html"),
-        active: false,
-      },
-      function (tab) {
-        const w = 1240;
-        const h = 740;
-        const left = screen.width / 2 - w / 2;
-        const top = screen.height / 2 - h / 2;
-        browser.windows.create({
-          tabId: tab.id,
-          type: "popup",
-          allowScriptsToClose: true,
-          focused: true,
-          width: w,
-          height: h,
-          left: left,
-          top: top,
-        });
-      }
-    );
+    const { id: activeTabId, url } = tab;
+    if (!isAuthScreen(url)) return; // Not a page where we can select a client
+    try {
+      await browser.tabs.insertCSS({ file: "client-edit.css" });
+      const clientData = await store.getClientData(activeTabId);
+      browser.tabs.sendMessage(activeTabId, {
+        message: "edit_clients_clicked",
+        data: clientData,
+      });
+    } catch (error) {
+      /* Do nothing.. cannot log from background script at present. */
+    }
   }
 });

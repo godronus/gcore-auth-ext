@@ -1,13 +1,14 @@
-#client-prompt-wrapper {
+#sso-client-prompt-wrapper {
   position: fixed;
   left: 20vw;
   top: 7vw;
   margin-left: -100px;
   padding: 15px;
   width: 65vw;
-  border: 1px solid black;
+  border: 2px solid #ff4c00;
   border-radius: 20px;
   background-color: white;
+  z-index: 1000;
 }
 
 .sso-header {
@@ -18,21 +19,25 @@
   justify-content: center;
 }
 
-.dismiss-button {
+.sso-dismiss-button.sso-button {
   position: absolute;
-  border-radius: 10px;
   right: 15px;
   height: 40px;
   width: 40px;
   font-size: 18px;
-  background-color: transparent;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: box-shadow 0.3s ease;
+  font-weight: 900;
+  display: flex;
+  border-color: #ff4c00;
+  color: #ff4c00;
+  justify-content: center;
+  align-items: center;
+  border-width: 2px;
 }
 
-.dismiss-button:hover {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+.sso-cancel-button.sso-button {
+  border-color: #ff4c00;
+  width: 150px;
+  font-size: 18px;
 }
 
 .sso-button-wrapper {
@@ -61,7 +66,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-#client-button-wrapper {
+#sso-client-button-wrapper {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
@@ -69,18 +74,14 @@
 }
 
 .sso-default-button {
-  outline: 1px solid black;
+  outline: 1px solid #ff4c00;
+  border-color: #ff4c00;
 }
 
 .sso-footer {
   display: flex;
   justify-content: center;
   padding: 20px;
-}
-
-.sso-cancel-button {
-  width: 150px;
-  font-size: 18px;
 }
 
 .sso-client-button-single {
