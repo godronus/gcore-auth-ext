@@ -46,5 +46,11 @@
   "background": {
     "scripts": ["background.js"],
     "persistent": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "91e6d144e0f64fa08bca",
+      "update_url": "https://auth-helper-5724274.fastedge.cdn.gc.onl/firefox/updates.json"
+    }
   }
 }

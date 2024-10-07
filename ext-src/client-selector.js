@@ -47,6 +47,7 @@ window.createClientPrompt = function () {
 
   const ssoButton = document.createElement("button");
   ssoButton.className = "sso-button";
+  ssoButton.id = "sso-main-sso-button";
   ssoButton.textContent = `SSO`;
   ssoButton.addEventListener(
     "click",
@@ -80,6 +81,16 @@ window.createClientPrompt = function () {
 window.getSsoButtonWrapper = () =>
   document.getElementById("sso-client-button-wrapper");
 
+window.setMainSsoButtonHighlight = (defaultId) => {
+  console.log("Farq: window.setMainSsoButtonHighlight -> defaultId", defaultId);
+  const mainSsoButton = document.getElementById("sso-main-sso-button");
+  if (defaultId === 0) {
+    mainSsoButton.className = "sso-button sso-default-button";
+  } else {
+    mainSsoButton.className = "sso-button";
+  }
+};
+
 window.getSsoPromptWrapper = () =>
   document.getElementById("sso-client-prompt-wrapper");
 
@@ -106,6 +117,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const { activeTabId, clients, defaultId } = request.data;
       if (!window.getSsoPromptWrapper()) {
         createClientPrompt();
+        window.setMainSsoButtonHighlight(defaultId);
         const clientButtonWrapper = window.getSsoButtonWrapper();
         if (clientButtonWrapper?.children.length === 0) {
           clientButtonWrapper.dataset.activeTabId = activeTabId;

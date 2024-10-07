@@ -1,0 +1,32 @@
+{
+  "name": "gcore-auth-ext",
+  "version": "1.0.0",
+  "description": "Simple SSO Login helper",
+  "main": "background.js",
+  "scripts": {
+    "astro:dev": "astro dev",
+    "astro:start": "astro dev",
+    "astro:build": "astro check && astro build",
+    "astro:preview": "astro preview",
+    "astro": "astro",
+    "start:firefox:watch": "web-ext run --source-dir ./ext-src/",
+    "firefox:build": "web-ext build --source-dir ./ext-src/ --artifacts-dir ./dist-firefox"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/godronus/gcore-auth-ext.git"
+  },
+  "author": "GFarquahrson",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/godronus/gcore-auth-ext/issues"
+  },
+  "homepage": "https://github.com/godronus/gcore-auth-ext#readme",
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@gcoredev/fastedge-sdk-js": "^1.0.2",
+    "astro": "^4.15.11",
+    "typescript": "^5.6.2",
+    "web-ext": "^8.3.0"
+  }
+}

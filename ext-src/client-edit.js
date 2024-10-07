@@ -18,7 +18,11 @@ window.handleCListButtonClick = (activeTabId, action, clientId) => {
     window.clients = window.clients.filter((client) => client.id !== clientId);
   }
   if (action === "default") {
-    window.defaultId = clientId;
+    if (window.defaultId === clientId) {
+      window.defaultId = 0;
+    } else {
+      window.defaultId = clientId;
+    }
   }
   window.renderClientListItems(activeTabId);
 };
