@@ -1,6 +1,7 @@
 const config = {
   "type": "static",
   "input": ".fastedge/static-index.js",
+  contentTypes: [{ test: /.xpi$/, contentType: 'application/x-xpinstall' },],
   "ignoreDotFiles": true,
   "ignoreDirs": [
     "./node_modules"

@@ -5,10 +5,10 @@
  */
 
 const staticAssetManifest = {
-  '/91e6d144e0f64fa08bca-1.0.xpi': { assetKey: '/91e6d144e0f64fa08bca-1.0.xpi', contentType: 'application/octet-stream', fileInfo: { size: 64855, hash: '21f51c7b81724984d3a70bf7c1c599eaf0742c4aed6c29c44190810e914bd6c2', lastModifiedTime: 1728293203, assetPath: './dist/91e6d144e0f64fa08bca-1.0.xpi' }, lastModifiedTime: 1728293203, type: 'wasm-inline' },
-  '/favicon.svg': { assetKey: '/favicon.svg', contentType: 'image/svg+xml', fileInfo: { size: 749, hash: '2d7a310283d6f9cc753210d83224cd6db6348cb82a5536348884e5831d46203f', lastModifiedTime: 1728293203, assetPath: './dist/favicon.svg' }, lastModifiedTime: 1728293203, type: 'wasm-inline' },
-  '/firefox/updates.json': { assetKey: '/firefox/updates.json', contentType: 'application/json', fileInfo: { size: 3, hash: 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', lastModifiedTime: 1728293203, assetPath: './dist/firefox/updates.json' }, lastModifiedTime: 1728293203, type: 'wasm-inline' },
-  '/index.html': { assetKey: '/index.html', contentType: 'text/html', fileInfo: { size: 4550, hash: 'dce0bdc6d0581147ad4bc6634f28867d4585a8fe379ad9e371b289093d3bc686', lastModifiedTime: 1728293203, assetPath: './dist/index.html' }, lastModifiedTime: 1728293203, type: 'wasm-inline' },
+  '/91e6d144e0f64fa08bca-1.0.xpi': { assetKey: '/91e6d144e0f64fa08bca-1.0.xpi', contentType: 'application/x-xpinstall', fileInfo: { size: 64855, hash: '21f51c7b81724984d3a70bf7c1c599eaf0742c4aed6c29c44190810e914bd6c2', lastModifiedTime: 1728296077, assetPath: './dist/91e6d144e0f64fa08bca-1.0.xpi' }, lastModifiedTime: 1728296077, type: 'wasm-inline' },
+  '/favicon.svg': { assetKey: '/favicon.svg', contentType: 'image/svg+xml', fileInfo: { size: 749, hash: '2d7a310283d6f9cc753210d83224cd6db6348cb82a5536348884e5831d46203f', lastModifiedTime: 1728296077, assetPath: './dist/favicon.svg' }, lastModifiedTime: 1728296077, type: 'wasm-inline' },
+  '/firefox/updates.json': { assetKey: '/firefox/updates.json', contentType: 'application/json', fileInfo: { size: 3, hash: 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', lastModifiedTime: 1728296077, assetPath: './dist/firefox/updates.json' }, lastModifiedTime: 1728296077, type: 'wasm-inline' },
+  '/index.html': { assetKey: '/index.html', contentType: 'text/html', fileInfo: { size: 4550, hash: 'dce0bdc6d0581147ad4bc6634f28867d4585a8fe379ad9e371b289093d3bc686', lastModifiedTime: 1728296077, assetPath: './dist/index.html' }, lastModifiedTime: 1728296077, type: 'wasm-inline' },
 };
 
 export { staticAssetManifest  };
