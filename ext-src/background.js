@@ -121,15 +121,13 @@ browser.browserAction.onClicked.addListener(function (tab) {
 });
 
 const regexPageTrackingPatterns = urlRegexPatterns([
-  "https://*.gplatform.local/*",
-  "https://*.preprod.world/*",
-  "https://*.admin.preprod.world/*",
-  "https://*.ed-prod.p.gc.onl/*",
-  "https://*.gcore.com/*",
-  "https://*.gcore.top/*",
-  "http://*.gplatform.local/*",
-  "http://localhost/*",
-  "http://0.0.0.0/*",
+  "https://*.gplatform.local*",
+  "https://*.preprod.world*",
+  "https://*.admin.preprod.world*",
+  "https://*.ed-prod.p.gc.onl*",
+  "https://*.gcore.com*",
+  "https://*.gcore.top*",
+  "http://*.gplatform.local*",
 ]);
 // Listen for when a page has finished loading
 browser.webNavigation.onCompleted.addListener(async function (details) {
@@ -170,46 +168,44 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
   }
 });
 
-browser.runtime.onMessage.addListener(async function (
-  request,
-  sender,
-  sendResponse
-) {
-  try {
-    switch (request.message) {
-      case "client_id_picked": {
-        const { activeTabId, clientId } = request.payload;
-        await store.setClientSelection(activeTabId, clientId);
-        browser.tabs.sendMessage(activeTabId, {
-          message: "start_login_sequence",
-          payload: request.payload,
-        });
-        break;
+browser.runtime.onMessage.addListener(
+  async function (request, sender, sendResponse) {
+    try {
+      switch (request.message) {
+        case "client_id_picked": {
+          const { activeTabId, clientId } = request.payload;
+          await store.setClientSelection(activeTabId, clientId);
+          browser.tabs.sendMessage(activeTabId, {
+            message: "start_login_sequence",
+            payload: request.payload,
+          });
+          break;
+        }
+        case "login_sequence_complete": {
+          const { activeTabId } = request.payload;
+          const url = await store.getPageHistory(activeTabId);
+          await store.setPageRedirect(activeTabId, url);
+        }
+        case "client_selector_closed": {
+          browser.tabs.removeCSS({ file: "client-selector.css" });
+          break;
+        }
+        case "client_editor_closed": {
+          browser.tabs.removeCSS({ file: "client-edit.css" });
+          break;
+        }
+        case "client_info_save": {
+          const { activeTabId, clientData } = request.payload;
+          await store.setClientData(activeTabId, clientData);
+          break;
+        }
       }
-      case "login_sequence_complete": {
-        const { activeTabId } = request.payload;
-        const url = await store.getPageHistory(activeTabId);
-        await store.setPageRedirect(activeTabId, url);
-      }
-      case "client_selector_closed": {
-        browser.tabs.removeCSS({ file: "client-selector.css" });
-        break;
-      }
-      case "client_editor_closed": {
-        browser.tabs.removeCSS({ file: "client-edit.css" });
-        break;
-      }
-      case "client_info_save": {
-        const { activeTabId, clientData } = request.payload;
-        await store.setClientData(activeTabId, clientData);
-        break;
-      }
+    } catch (error) {
+      /* Error decrypting */
+      console.error("oops....", error);
     }
-  } catch (error) {
-    /* Error decrypting */
-    console.error("oops....", error);
   }
-});
+);
 
 /* Context Menus */
 

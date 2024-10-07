@@ -34,11 +34,22 @@ import Layout from '../layouts/Layout.astro';
 		</svg>
 		<h1>SSO <span class="text-gradient">Auth Addon</span></h1>
 		<p class="instructions">
-			This is a simple addon to speed up authentication via SSO.
-		</p>
-		<p class="instructions">
+			This is a simple addon to speed up authentication via SSO. <br />
 			Firefox addon: <a class="install-link" href="./91e6d144e0f64fa08bca-1.0.xpi">Install</a>
  		</p>
+		<p class="instructions">
+			Clicking the Extension-Icon will open the client selector panel. Here you can select which client-id you want to login with.
+			Double Clicking the Extension-Icon will auto select the default user. This is the generic SSO login unless otherwise saved.
+			<br />
+			On the standard Gcore client selection screen, you may right-click the Extension-Icon and select "Edit Clients", this will give you a list of all the available clients.
+			Here you can set defaults etc. Whilst this screen is open if you right-click the Extension-Icon a second time it will populate your table from the values available in the webpage.
+
+			See demo video below:
+ 		</p>
+		<video controls width="800">
+				<source src="./static/sso-video.mp4" type="video/mp4">
+				Your browser does not support the video tag.
+		</video>
 	</main>
 </Layout>
 

@@ -82,7 +82,6 @@ window.getSsoButtonWrapper = () =>
   document.getElementById("sso-client-button-wrapper");
 
 window.setMainSsoButtonHighlight = (defaultId) => {
-  console.log("Farq: window.setMainSsoButtonHighlight -> defaultId", defaultId);
   const mainSsoButton = document.getElementById("sso-main-sso-button");
   if (defaultId === 0) {
     mainSsoButton.className = "sso-button sso-default-button";
@@ -125,8 +124,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             clients.length < 12
               ? "single"
               : clients.length < 20
-              ? "double"
-              : "triple";
+                ? "double"
+                : "triple";
 
           clients.forEach((client) => {
             window.createClientButton(defaultId, client, columns);
