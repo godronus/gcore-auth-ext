@@ -1,6 +1,6 @@
 window.handleCListButtonClick = (activeTabId, action, clientId) => {
   if (action === "cancel") {
-    window.closeClientEditPanel();
+    window.closeClientEditPanel(activeTabId);
     return;
   }
   if (action === "save") {
@@ -11,7 +11,7 @@ window.handleCListButtonClick = (activeTabId, action, clientId) => {
         clientData: { defaultId: window.defaultId, clients: window.clients },
       },
     });
-    window.closeClientEditPanel();
+    window.closeClientEditPanel(activeTabId);
     return;
   }
   if (action === "remove") {
@@ -27,7 +27,7 @@ window.handleCListButtonClick = (activeTabId, action, clientId) => {
   window.renderClientListItems(activeTabId);
 };
 
-window.closeClientEditPanel = () => {
+window.closeClientEditPanel = (activeTabId) => {
   window.getClientEditWrapper()?.remove();
   browser.runtime.sendMessage({
     message: "client_editor_closed",
@@ -224,7 +224,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     }
     case "extension_icon_clicked": {
-      window.closeClientEditPanel();
+      const { activeTabId } = request.data;
+      window.closeClientEditPanel(activeTabId);
       break;
     }
   }

@@ -7,10 +7,10 @@ window.handleSSOButtonClick = (clientId) => {
       payload: { activeTabId, clientId },
     });
   }
-  window.closeSelectorPanel();
+  window.closeSelectorPanel(activeTabId);
 };
 
-window.closeSelectorPanel = () => {
+window.closeSelectorPanel = (activeTabId) => {
   window.getSsoPromptWrapper()?.remove();
   browser.runtime.sendMessage({
     message: "client_selector_closed",
@@ -120,6 +120,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const clientButtonWrapper = window.getSsoButtonWrapper();
         if (clientButtonWrapper?.children.length === 0) {
           clientButtonWrapper.dataset.activeTabId = activeTabId;
+          if (!clients) return;
           const columns =
             clients.length < 12
               ? "single"
@@ -136,12 +137,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
           message: "client_id_picked",
           payload: { activeTabId, clientId: defaultId },
         });
-        window.closeSelectorPanel();
+        window.closeSelectorPanel(activeTabId);
       }
       break;
     }
     case "edit_clients_clicked": {
-      window.closeSelectorPanel();
+      const { activeTabId } = request.data;
+      window.closeSelectorPanel(activeTabId);
       break;
     }
   }
