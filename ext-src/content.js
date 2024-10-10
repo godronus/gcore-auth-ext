@@ -68,7 +68,7 @@ const ssoLogin = async () => {
 };
 
 const sendLoginSequenceComplete = (activeTabId) => {
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({
     message: "login_sequence_complete",
     payload: { activeTabId },
   });
@@ -94,36 +94,34 @@ const loginClientSelection = async (activeTabId, clientId) => {
   }
 };
 
-browser.runtime.onMessage.addListener(async function (
-  request,
-  sender,
-  sendResponse
-) {
-  try {
-    switch (request.message) {
-      case "start_login_sequence": {
-        await ssoLogin();
-        break;
-      }
-      case "client_selection_form_loaded": {
-        if (request.payload.clientId) {
-          await loginClientSelection(
-            request.payload.activeTabId,
-            request.payload.clientId
-          );
+chrome.runtime.onMessage.addListener(
+  async function (request, sender, sendResponse) {
+    try {
+      switch (request.message) {
+        case "start_login_sequence": {
+          await ssoLogin();
+          break;
         }
-        break;
-      }
-      case "login_sequence_complete_set_redirect_url": {
-        if (request.payload.activeTabId) {
-          await sendLoginSequenceComplete(request.payload.activeTabId);
+        case "client_selection_form_loaded": {
+          if (request.payload.clientId) {
+            await loginClientSelection(
+              request.payload.activeTabId,
+              request.payload.clientId
+            );
+          }
+          break;
         }
-        break;
+        case "login_sequence_complete_set_redirect_url": {
+          if (request.payload.activeTabId) {
+            await sendLoginSequenceComplete(request.payload.activeTabId);
+          }
+          break;
+        }
       }
+    } catch (error) {
+      console.error(
+        "Login Extension Error: Unable to navigate SSO Login controls"
+      );
     }
-  } catch (error) {
-    console.error(
-      "Login Extension Error: Unable to navigate SSO Login controls"
-    );
   }
-});
+);

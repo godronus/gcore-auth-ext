@@ -7,7 +7,7 @@ const storageBox = () => {
       if (storageData[storageKey]) {
         return resolve(storageData[storageKey]);
       }
-      browser.storage.local.get([storageKey], function (storedData) {
+      chrome.storage.local.get([storageKey], function (storedData) {
         resolve(storedData[storageKey] ?? {});
       });
     });
@@ -19,7 +19,7 @@ const storageBox = () => {
         storageData[storageKey] = dataToStore;
         return resolve(dataToStore);
       }
-      browser.storage.local.set({ [storageKey]: dataToStore }, function () {
+      chrome.storage.local.set({ [storageKey]: dataToStore }, function () {
         storageData[storageKey] = dataToStore;
         resolve(dataToStore);
       });
@@ -103,15 +103,15 @@ const isAuthScreen = (url) => {
   return regexSelectClientPatterns.some((regex) => new RegExp(regex).test(url));
 };
 
-browser.browserAction.onClicked.addListener(function (tab) {
-  browser.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+chrome.browserAction.onClicked.addListener(function (tab) {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const activeTabId = tabs?.[0]?.id;
     const url = tabs?.[0]?.url;
     if (!isAuthScreen(url)) return; // Not a page where we can select a client
     try {
-      browser.tabs.insertCSS({ file: "client-selector.css" });
+      chrome.tabs.insertCSS({ file: "client-selector.css" });
       const clientData = await store.getClientData(activeTabId);
-      browser.tabs.sendMessage(activeTabId, {
+      chrome.tabs.sendMessage(activeTabId, {
         message: "extension_icon_clicked",
         data: clientData,
       });
@@ -131,7 +131,7 @@ const regexPageTrackingPatterns = urlRegexPatterns([
   "http://*.gplatform.local*",
 ]);
 // Listen for when a page has finished loading
-browser.webNavigation.onCompleted.addListener(async function (details) {
+chrome.webNavigation.onCompleted.addListener(async function (details) {
   // Ensure it's the main frame
   if (details.frameId === 0) {
     const { url, tabId: activeTabId } = details;
@@ -143,7 +143,7 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
         if (pageRedirectUrl) {
           // Redirect to the saved page as this comes from login completion
           await store.setPageRedirect(activeTabId, null);
-          return browser.tabs.update(activeTabId, { url: pageRedirectUrl });
+          return chrome.tabs.update(activeTabId, { url: pageRedirectUrl });
         }
         // Native reload.. save history
         return await store.setPageHistory(activeTabId, url);
@@ -151,7 +151,7 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
     }
     if (url.includes("acs?session_id=")) {
       // This implies the login sequence has completed
-      browser.tabs.sendMessage(activeTabId, {
+      chrome.tabs.sendMessage(activeTabId, {
         message: "login_sequence_complete_set_redirect_url",
         payload: { activeTabId },
       });
@@ -159,7 +159,7 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
         // This is the client selection page loading after sso login
         const clientId = await store.getClientSelection(activeTabId);
         setTimeout(() => {
-          browser.tabs.sendMessage(activeTabId, {
+          chrome.tabs.sendMessage(activeTabId, {
             message: "client_selection_form_loaded",
             payload: { clientId, activeTabId },
           });
@@ -169,14 +169,14 @@ browser.webNavigation.onCompleted.addListener(async function (details) {
   }
 });
 
-browser.runtime.onMessage.addListener(
+chrome.runtime.onMessage.addListener(
   async function (request, sender, sendResponse) {
     try {
       switch (request.message) {
         case "client_id_picked": {
           const { activeTabId, clientId } = request.payload;
           await store.setClientSelection(activeTabId, clientId);
-          browser.tabs.sendMessage(activeTabId, {
+          chrome.tabs.sendMessage(activeTabId, {
             message: "start_login_sequence",
             payload: request.payload,
           });
@@ -188,11 +188,11 @@ browser.runtime.onMessage.addListener(
           await store.setPageRedirect(activeTabId, url);
         }
         case "client_selector_closed": {
-          browser.tabs.removeCSS({ file: "client-selector.css" });
+          chrome.tabs.removeCSS({ file: "client-selector.css" });
           break;
         }
         case "client_editor_closed": {
-          browser.tabs.removeCSS({ file: "client-edit.css" });
+          chrome.tabs.removeCSS({ file: "client-edit.css" });
           break;
         }
         case "client_info_save": {
@@ -210,20 +210,20 @@ browser.runtime.onMessage.addListener(
 
 /* Context Menus */
 
-browser.contextMenus.create({
+chrome.contextMenus.create({
   id: "gcore-auth-edit-clients",
   title: "Edit Clients",
   contexts: ["browser_action"],
 });
 
-browser.contextMenus.onClicked.addListener(async function (info, tab) {
+chrome.contextMenus.onClicked.addListener(async function (info, tab) {
   if (info.menuItemId === "gcore-auth-edit-clients") {
     const { id: activeTabId, url } = tab;
     if (!isAuthScreen(url)) return; // Not a page where we can select a client
     try {
-      await browser.tabs.insertCSS({ file: "client-edit.css" });
+      await chrome.tabs.insertCSS({ file: "client-edit.css" });
       const clientData = await store.getClientData(activeTabId);
-      browser.tabs.sendMessage(activeTabId, {
+      chrome.tabs.sendMessage(activeTabId, {
         message: "edit_clients_clicked",
         data: clientData,
       });

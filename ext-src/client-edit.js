@@ -1,17 +1,17 @@
 window.handleCListButtonClick = (activeTabId, action, clientId) => {
   if (action === "cancel") {
-    window.closeClientEditPanel();
+    window.closeClientEditPanel(activeTabId);
     return;
   }
   if (action === "save") {
-    browser.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       message: "client_info_save",
       payload: {
         activeTabId,
         clientData: { defaultId: window.defaultId, clients: window.clients },
       },
     });
-    window.closeClientEditPanel();
+    window.closeClientEditPanel(activeTabId);
     return;
   }
   if (action === "remove") {
@@ -27,9 +27,9 @@ window.handleCListButtonClick = (activeTabId, action, clientId) => {
   window.renderClientListItems(activeTabId);
 };
 
-window.closeClientEditPanel = () => {
+window.closeClientEditPanel = (activeTabId) => {
   window.getClientEditWrapper()?.remove();
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({
     message: "client_editor_closed",
     payload: { activeTabId },
   });
@@ -210,7 +210,7 @@ window.mergeDedupedClients = (activeTabId, clients = []) => {
   window.renderClientListItems(activeTabId);
 };
 
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.message) {
     case "edit_clients_clicked": {
       const { clients, defaultId, activeTabId } = request.data;
@@ -224,7 +224,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     }
     case "extension_icon_clicked": {
-      window.closeClientEditPanel();
+      window.closeClientEditPanel(activeTabId);
       break;
     }
   }

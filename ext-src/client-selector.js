@@ -2,17 +2,17 @@ window.handleSSOButtonClick = (clientId) => {
   const clientButtonWrapper = window.getSsoButtonWrapper();
   const activeTabId = parseInt(clientButtonWrapper.dataset.activeTabId ?? 0);
   if (clientId !== "cancel") {
-    browser.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       message: "client_id_picked",
       payload: { activeTabId, clientId },
     });
   }
-  window.closeSelectorPanel();
+  window.closeSelectorPanel(activeTabId);
 };
 
-window.closeSelectorPanel = () => {
+window.closeSelectorPanel = (activeTabId) => {
   window.getSsoPromptWrapper()?.remove();
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({
     message: "client_selector_closed",
     payload: { activeTabId },
   });
@@ -110,7 +110,7 @@ window.createClientButton = (defaultId, client, columns = "single") => {
   clientButtonWrapper.appendChild(clientButton);
 };
 
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.message) {
     case "extension_icon_clicked": {
       const { activeTabId, clients, defaultId } = request.data;
@@ -132,16 +132,16 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
         }
       } else {
-        browser.runtime.sendMessage({
+        chrome.runtime.sendMessage({
           message: "client_id_picked",
           payload: { activeTabId, clientId: defaultId },
         });
-        window.closeSelectorPanel();
+        window.closeSelectorPanel(activeTabId);
       }
       break;
     }
     case "edit_clients_clicked": {
-      window.closeSelectorPanel();
+      window.closeSelectorPanel(activeTabId);
       break;
     }
   }

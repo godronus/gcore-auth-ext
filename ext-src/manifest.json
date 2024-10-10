@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Gcore auth extension",
-  "version": "1.2",
+  "version": "1.0",
   "description": "This extension will help you to authenticate with Gcore",
   "content_scripts": [
     {
@@ -46,11 +46,5 @@
   "background": {
     "scripts": ["background.js"],
     "persistent": true
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "{0b92019e-e2ec-4c46-8f49-327e3e99534f}",
-      "update_url": "https://auth-helper-5724274.fastedge.cdn.gc.onl/firefox/updates.json"
-    }
   }
 }
