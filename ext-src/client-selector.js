@@ -120,6 +120,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const clientButtonWrapper = window.getSsoButtonWrapper();
         if (clientButtonWrapper?.children.length === 0) {
           clientButtonWrapper.dataset.activeTabId = activeTabId;
+          if (!clients) return;
           const columns =
             clients.length < 12
               ? "single"
@@ -141,6 +142,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     }
     case "edit_clients_clicked": {
+      const { activeTabId } = request.data;
       window.closeSelectorPanel(activeTabId);
       break;
     }

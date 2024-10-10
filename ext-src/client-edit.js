@@ -224,6 +224,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     }
     case "extension_icon_clicked": {
+      const { activeTabId } = request.data;
       window.closeClientEditPanel(activeTabId);
       break;
     }
