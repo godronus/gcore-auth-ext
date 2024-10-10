@@ -10,7 +10,8 @@
     "astro:preview": "astro preview",
     "astro": "astro",
     "start:firefox:watch": "web-ext run --source-dir ./ext-src/",
-    "firefox:build": "web-ext build --source-dir ./ext-src/ --artifacts-dir ./dist-firefox"
+    "firefox:build": "web-ext build --source-dir ./ext-src/ --artifacts-dir ./dist-firefox",
+    "chrome:build": "crx pack ./ext-src/ -o ./dist-chrome/auth-1.2.crx -p ./key.pem"
   },
   "repository": {
     "type": "git",
@@ -28,5 +29,8 @@
     "astro": "^4.15.11",
     "typescript": "^5.6.2",
     "web-ext": "^8.3.0"
+  },
+  "devDependencies": {
+    "crx": "^5.0.1"
   }
 }

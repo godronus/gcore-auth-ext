@@ -1,8 +1,9 @@
 {
   "manifest_version": 2,
   "name": "Gcore auth extension",
-  "version": "1.0",
+  "version": "1.2",
   "description": "This extension will help you to authenticate with Gcore",
+  "update_url": "https://auth-helper-5724274.fastedge.cdn.gc.onl/chrome/update.xml",
   "content_scripts": [
     {
       "matches": [
