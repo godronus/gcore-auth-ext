@@ -8,7 +8,7 @@ const storageBox = () => {
         return resolve(storageData[storageKey]);
       }
       browser.storage.local.get([storageKey], function (storedData) {
-        resolve(storedData);
+        resolve(storedData[storageKey] ?? {});
       });
     });
 
@@ -19,21 +19,22 @@ const storageBox = () => {
         storageData[storageKey] = dataToStore;
         return resolve(dataToStore);
       }
-      browser.storage.local.set({ [storageKey]: dataToStore }, function (here) {
+      browser.storage.local.set({ [storageKey]: dataToStore }, function () {
         storageData[storageKey] = dataToStore;
         resolve(dataToStore);
       });
     });
 
   return {
-    getClientData: (activeTabId) =>
-      new Promise(async (resolve, reject) => {
+    getClientData: (activeTabId) => {
+      return new Promise(async (resolve, reject) => {
         const clientData = await getStorageData("client");
         return resolve({
           activeTabId,
           ...clientData,
         });
-      }),
+      });
+    },
     setClientData: (activeTabId, clientData) => {
       return setStorageData("client", clientData);
     },
